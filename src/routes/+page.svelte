@@ -10,6 +10,7 @@
 
   let cars = [];
   let loading = true;
+  let loadError = '';
   let dark = false;
   let search = '';
   let selectedCar = null;
@@ -21,13 +22,18 @@
 
   async function loadCars() {
     if (!supabase) { loading = false; return; }
+    loadError = '';
     const { data, error } = await supabase
       .from('cars')
       .select('id, model, year, price, description, image_url, featured, brands(name, category, country, flag_emoji)')
       .eq('available', true)
       .order('featured', { ascending: false })
       .order('price', { ascending: false });
-    if (!error) cars = data ?? [];
+    if (error) {
+      loadError = 'Não foi possível carregar o catálogo agora. Tente atualizar a página.';
+    } else {
+      cars = data ?? [];
+    }
     loading = false;
   }
 
@@ -93,6 +99,7 @@
   <meta property="og:title" content="Morten — Veículos selecionados" />
   <meta property="og:description" content="Explore veículos selecionados e encontre seu próximo carro na Morten Automotive." />
   <meta property="og:type" content="website" />
+  <meta name="robots" content="index,follow" />
 </svelte:head>
 
 <header class="sticky top-0 z-50 border-b border-black/10 bg-white/90 backdrop-blur-xl dark:border-white/10 dark:bg-black/85">
@@ -119,7 +126,7 @@
       <div class="mt-10 max-w-2xl">
         <div class="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-5 py-4 focus-within:border-white/40">
           <span class="text-xl">⌕</span>
-          <input bind:value={search} placeholder="Buscar marca ou modelo..." class="w-full bg-transparent outline-none placeholder:text-white/40" />
+          <input aria-label="Buscar marca ou modelo" bind:value={search} placeholder="Buscar marca ou modelo..." class="w-full bg-transparent outline-none placeholder:text-white/40" />
           {#if search}<button onclick={() => search = ''} class="text-white/50 hover:text-white">×</button>{/if}
         </div>
       </div>
@@ -131,6 +138,11 @@
 
   {#if loading}
     <div class="mx-auto max-w-7xl px-5 py-20 text-center text-neutral-500">Carregando veículos...</div>
+  {:else if loadError}
+    <div class="mx-auto max-w-7xl px-5 py-20 text-center">
+      <p class="text-red-600 dark:text-red-300">{loadError}</p>
+      <button onclick={loadCars} class="mt-5 rounded-xl bg-black px-5 py-3 text-sm font-bold text-white dark:bg-white dark:text-black">Tentar novamente</button>
+    </div>
   {:else if !supabase}
     <div class="mx-auto max-w-7xl px-5 py-20 text-center text-neutral-500">Configure as variáveis do Supabase para carregar o catálogo.</div>
   {:else}
@@ -184,7 +196,7 @@
 </main>
 
 {#if selectedCar}
-  <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm" role="presentation" aria-label="Detalhes do veículo" onclick={(e) => e.target === e.currentTarget && (selectedCar = null)}>
+  <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Detalhes do veículo" onclick={(e) => e.target === e.currentTarget && (selectedCar = null)}>
     <div class="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-3xl bg-white text-neutral-950 shadow-2xl dark:bg-neutral-900 dark:text-white">
       <div class="relative flex h-64 items-center justify-center overflow-hidden bg-neutral-100 dark:bg-neutral-800">
         {#if selectedCar.image_url}<img src={selectedCar.image_url} alt={selectedCar.model} class="h-full w-full object-cover" />{:else}<span class="text-8xl opacity-20">🚘</span>{/if}
