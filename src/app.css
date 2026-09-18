@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+:root { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: #f7f7f7; color: #171717; }
+.dark body { background: #090909; color: #f5f5f5; }
