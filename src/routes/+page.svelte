@@ -11,7 +11,6 @@
   let cars = [];
   let loading = true;
   let loadError = '';
-  let loadError = '';
   let dark = false;
   let search = '';
   let selectedCar = null;
@@ -23,7 +22,6 @@
 
   async function loadCars() {
     if (!supabase) { loading = false; return; }
-    loadError = '';
     loadError = '';
     const { data, error } = await supabase
       .from('cars')
@@ -102,7 +100,6 @@
   <meta property="og:description" content="Explore veículos selecionados e encontre seu próximo carro na Morten Automotive." />
   <meta property="og:type" content="website" />
   <meta name="robots" content="index,follow" />
-  <meta name="robots" content="index,follow" />
 </svelte:head>
 
 <header class="sticky top-0 z-50 border-b border-black/10 bg-white/90 backdrop-blur-xl dark:border-white/10 dark:bg-black/85">
@@ -146,15 +143,8 @@
       <p class="text-red-600 dark:text-red-300">{loadError}</p>
       <button onclick={loadCars} class="mt-5 rounded-xl bg-black px-5 py-3 text-sm font-bold text-white dark:bg-white dark:text-black">Tentar novamente</button>
     </div>
-  {:else if loadError}
-    <div class="mx-auto max-w-7xl px-5 py-20 text-center">
-      <p class="text-red-600 dark:text-red-300">{loadError}</p>
-      <button onclick={loadCars} class="mt-5 rounded-xl bg-black px-5 py-3 text-sm font-bold text-white dark:bg-white dark:text-black">Tentar novamente</button>
-    </div>
   {:else if !supabase}
     <div class="mx-auto max-w-7xl px-5 py-20 text-center text-neutral-500">Configure as variáveis do Supabase para carregar o catálogo.</div>
-  {:else if loadError}
-    <div class="mx-auto max-w-7xl px-5 py-20 text-center"><p class="text-neutral-500">{loadError}</p><button onclick={loadCars} class="mt-4 rounded-xl bg-black px-5 py-3 text-sm font-black text-white dark:bg-white dark:text-black">Tentar novamente</button></div>
   {:else}
     {#each Object.entries(sections) as [category, section]}
       <section id={category} class={`bg-gradient-to-br ${section.colors} px-5 py-16 text-white md:py-20`}>
