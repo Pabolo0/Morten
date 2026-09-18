@@ -13,6 +13,10 @@
   let dark = false;
   let search = '';
   let selectedCar = null;
+  let contactOpen = false;
+  let sent = false;
+  let sending = false;
+  let form = { name: '', email: '', phone: '', message: '' };
 
   async function loadCars() {
     if (!supabase) { loading = false; return; }
@@ -40,6 +44,20 @@
       car.brands?.category === category &&
       `${car.brands?.name} ${car.model}`.toLowerCase().includes(search.toLowerCase())
     );
+  }
+
+  async function sendInquiry() {
+    if (!supabase || !selectedCar) return;
+    sending = true;
+    const { error } = await supabase.from('inquiries').insert({ car_id: selectedCar.id, name: form.name.trim(), email: form.email.trim(), phone: form.phone.trim() || null, message: form.message.trim() });
+    sending = false;
+    if (!error) { sent = true; form = { name: '', email: '', phone: '', message: '' }; }
+  }
+
+  function closeDetails() {
+    selectedCar = null;
+    contactOpen = false;
+    sent = false;
   }
 
   onMount(loadCars);
@@ -143,7 +161,7 @@
     <div class="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-3xl bg-white text-neutral-950 shadow-2xl dark:bg-neutral-900 dark:text-white">
       <div class="relative flex h-64 items-center justify-center overflow-hidden bg-neutral-100 dark:bg-neutral-800">
         {#if selectedCar.image_url}<img src={selectedCar.image_url} alt={selectedCar.model} class="h-full w-full object-cover" />{:else}<span class="text-8xl opacity-20">🚘</span>{/if}
-        <button onclick={() => selectedCar = null} aria-label="Fechar" class="absolute right-4 top-4 rounded-full bg-black/60 px-4 py-2 text-xl text-white">×</button>
+        <button onclick={closeDetails} aria-label="Fechar" class="absolute right-4 top-4 rounded-full bg-black/60 px-4 py-2 text-xl text-white">×</button>
       </div>
       <div class="p-7 md:p-9">
         <p class="text-sm font-bold text-neutral-500">{selectedCar.brands?.flag_emoji} {selectedCar.brands?.name} · {selectedCar.year}</p>
@@ -153,7 +171,22 @@
           <p class="text-xs uppercase tracking-wider text-neutral-500">Preço</p>
           <p class="mt-1 text-3xl font-black">{money(selectedCar.price)}</p>
         </div>
-        <button class="mt-6 w-full rounded-2xl bg-neutral-950 px-5 py-4 font-black text-white transition hover:opacity-85 dark:bg-white dark:text-black">Tenho interesse</button>
+        {#if !contactOpen}
+          <button onclick={() => contactOpen = true} class="mt-6 w-full rounded-2xl bg-neutral-950 px-5 py-4 font-black text-white transition hover:opacity-85 dark:bg-white dark:text-black">Tenho interesse</button>
+        {:else if sent}
+          <div class="mt-6 rounded-2xl bg-emerald-100 p-5 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
+            <p class="font-black">Interesse enviado!</p>
+            <p class="mt-1 text-sm opacity-80">Recebemos sua mensagem sobre este veículo.</p>
+          </div>
+        {:else}
+          <form onsubmit={(e) => { e.preventDefault(); sendInquiry(); }} class="mt-6 space-y-3">
+            <input required bind:value={form.name} placeholder="Seu nome" class="w-full rounded-xl border border-black/10 bg-neutral-50 px-4 py-3 outline-none dark:border-white/10 dark:bg-white/5" />
+            <input required type="email" bind:value={form.email} placeholder="Seu e-mail" class="w-full rounded-xl border border-black/10 bg-neutral-50 px-4 py-3 outline-none dark:border-white/10 dark:bg-white/5" />
+            <input bind:value={form.phone} placeholder="Telefone (opcional)" class="w-full rounded-xl border border-black/10 bg-neutral-50 px-4 py-3 outline-none dark:border-white/10 dark:bg-white/5" />
+            <textarea required bind:value={form.message} rows="4" placeholder="Olá, tenho interesse neste veículo..." class="w-full resize-none rounded-xl border border-black/10 bg-neutral-50 px-4 py-3 outline-none dark:border-white/10 dark:bg-white/5"></textarea>
+            <button disabled={sending} class="w-full rounded-xl bg-neutral-950 px-5 py-4 font-black text-white disabled:opacity-50 dark:bg-white dark:text-black">{sending ? 'Enviando...' : 'Enviar interesse'}</button>
+          </form>
+        {/if}
       </div>
     </div>
   </div>
