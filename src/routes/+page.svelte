@@ -145,6 +145,8 @@
     </div>
   {:else if !supabase}
     <div class="mx-auto max-w-7xl px-5 py-20 text-center text-neutral-500">Configure as variáveis do Supabase para carregar o catálogo.</div>
+  {:else if loadError}
+    <div class="mx-auto max-w-7xl px-5 py-20 text-center"><p class="text-neutral-500">{loadError}</p><button onclick={loadCars} class="mt-4 rounded-xl bg-black px-5 py-3 text-sm font-black text-white dark:bg-white dark:text-black">Tentar novamente</button></div>
   {:else}
     {#each Object.entries(sections) as [category, section]}
       <section id={category} class={`bg-gradient-to-br ${section.colors} px-5 py-16 text-white md:py-20`}>
