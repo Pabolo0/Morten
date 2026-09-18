@@ -195,6 +195,6 @@
 <footer class="bg-black px-5 py-10 text-white/50">
   <div class="mx-auto flex max-w-7xl flex-col justify-between gap-4 text-sm md:flex-row">
     <span class="font-black tracking-[0.25em] text-white">MORTEN</span>
-    <span>© 2026 Morten Automotive.</span>
+    <span>© 2026 Morten Automotive.</span><a href="/admin" class="font-bold transition hover:text-white">Área administrativa</a>
   </div>
 </footer>
