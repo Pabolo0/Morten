@@ -16,6 +16,7 @@
   let contactOpen = false;
   let sent = false;
   let sending = false;
+  let inquiryError = '';
   let form = { name: '', email: '', phone: '', message: '' };
 
   async function loadCars() {
@@ -49,23 +50,49 @@
   async function sendInquiry() {
     if (!supabase || !selectedCar) return;
     sending = true;
-    const { error } = await supabase.from('inquiries').insert({ car_id: selectedCar.id, name: form.name.trim(), email: form.email.trim(), phone: form.phone.trim() || null, message: form.message.trim() });
+    inquiryError = '';
+    const payload = {
+      car_id: selectedCar.id,
+      name: form.name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim() || null,
+      message: form.message.trim()
+    };
+    const { error } = await supabase.from('inquiries').insert(payload);
     sending = false;
-    if (!error) { sent = true; form = { name: '', email: '', phone: '', message: '' }; }
+    if (error) {
+      inquiryError = 'Não foi possível enviar agora. Tente novamente em instantes.';
+      return;
+    }
+    sent = true;
+    form = { name: '', email: '', phone: '', message: '' };
   }
 
   function closeDetails() {
     selectedCar = null;
     contactOpen = false;
     sent = false;
+    inquiryError = '';
   }
 
-  onMount(loadCars);
+  function handleKeydown(event) {
+    if (event.key === 'Escape' && selectedCar) closeDetails();
+  }
+
+  onMount(() => {
+    loadCars();
+    window.addEventListener('keydown', handleKeydown);
+    return () => window.removeEventListener('keydown', handleKeydown);
+  });
 </script>
 
 <svelte:head>
   <title>Morten — Veículos selecionados</title>
-  <meta name="description" content="Morten: uma experiência moderna para encontrar seu próximo veículo." />
+  <meta name="description" content="Morten Automotive: catálogo de veículos selecionados, com modelos de luxo, premium e essenciais." />
+  <meta name="theme-color" content="#0a0a0a" />
+  <meta property="og:title" content="Morten — Veículos selecionados" />
+  <meta property="og:description" content="Explore veículos selecionados e encontre seu próximo carro na Morten Automotive." />
+  <meta property="og:type" content="website" />
 </svelte:head>
 
 <header class="sticky top-0 z-50 border-b border-black/10 bg-white/90 backdrop-blur-xl dark:border-white/10 dark:bg-black/85">
@@ -124,7 +151,7 @@
               <article class="group overflow-hidden rounded-3xl border border-white/10 bg-black/25 shadow-2xl backdrop-blur transition duration-300 hover:-translate-y-1 hover:bg-black/35">
                 <div class="relative flex h-56 items-center justify-center overflow-hidden bg-white/10">
                   {#if car.image_url}
-                    <img src={car.image_url} alt={car.model} class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                    <img src={car.image_url} alt={`${car.brands?.name ?? "Morten"} ${car.model}`} loading="lazy" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
                   {:else}
                     <div class="text-center"><span class="text-7xl opacity-25">🚘</span><p class="mt-2 text-xs text-white/30">Foto em breve</p></div>
                   {/if}
@@ -157,7 +184,7 @@
 </main>
 
 {#if selectedCar}
-  <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm" role="presentation" onclick={(e) => e.target === e.currentTarget && (selectedCar = null)}>
+  <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm" role="presentation" aria-label="Detalhes do veículo" onclick={(e) => e.target === e.currentTarget && (selectedCar = null)}>
     <div class="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-3xl bg-white text-neutral-950 shadow-2xl dark:bg-neutral-900 dark:text-white">
       <div class="relative flex h-64 items-center justify-center overflow-hidden bg-neutral-100 dark:bg-neutral-800">
         {#if selectedCar.image_url}<img src={selectedCar.image_url} alt={selectedCar.model} class="h-full w-full object-cover" />{:else}<span class="text-8xl opacity-20">🚘</span>{/if}
@@ -183,6 +210,7 @@
             <input required bind:value={form.name} placeholder="Seu nome" class="w-full rounded-xl border border-black/10 bg-neutral-50 px-4 py-3 outline-none dark:border-white/10 dark:bg-white/5" />
             <input required type="email" bind:value={form.email} placeholder="Seu e-mail" class="w-full rounded-xl border border-black/10 bg-neutral-50 px-4 py-3 outline-none dark:border-white/10 dark:bg-white/5" />
             <input bind:value={form.phone} placeholder="Telefone (opcional)" class="w-full rounded-xl border border-black/10 bg-neutral-50 px-4 py-3 outline-none dark:border-white/10 dark:bg-white/5" />
+            {#if inquiryError}<p class="rounded-xl bg-red-100 p-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-200">{inquiryError}</p>{/if}
             <textarea required bind:value={form.message} rows="4" placeholder="Olá, tenho interesse neste veículo..." class="w-full resize-none rounded-xl border border-black/10 bg-neutral-50 px-4 py-3 outline-none dark:border-white/10 dark:bg-white/5"></textarea>
             <button disabled={sending} class="w-full rounded-xl bg-neutral-950 px-5 py-4 font-black text-white disabled:opacity-50 dark:bg-white dark:text-black">{sending ? 'Enviando...' : 'Enviar interesse'}</button>
           </form>
