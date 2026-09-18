@@ -5,6 +5,7 @@
   let session = null, loading = true, authorized = false;
   let email = '', password = '', authError = '', message = '';
   let cars = [], brands = [], inquiries = [], editing = null;
+  let saveError = '';
   let form = { brand_id: '', model: '', year: 2026, price: '', description: '', image_url: '', featured: false, available: true };
 
   async function checkUser() {
@@ -57,9 +58,14 @@
 
   async function saveCar() {
     message = '';
+    saveError = '';
+    if (!form.brand_id || !form.model.trim() || !form.description.trim() || Number(form.year) < 1900 || Number(form.price) < 0) {
+      saveError = 'Preencha os campos obrigatórios com valores válidos.';
+      return;
+    }
     const payload = { ...form, brand_id: Number(form.brand_id), year: Number(form.year), price: Number(form.price) };
     const result = editing ? await supabase.from('cars').update(payload).eq('id', editing) : await supabase.from('cars').insert(payload);
-    if (result.error) { message = result.error.message; return; }
+    if (result.error) { saveError = 'Não foi possível salvar o veículo. Verifique os dados e tente novamente.'; return; }
     message = editing ? 'Veículo atualizado.' : 'Veículo cadastrado.';
     resetForm();
     await loadAll();
@@ -132,10 +138,16 @@
             <label class="flex items-center gap-2 text-sm"><input type="checkbox" bind:checked={form.available} /> Disponível no catálogo</label>
             <button class="w-full rounded-xl bg-black px-4 py-3 font-black text-white dark:bg-white dark:text-black">{editing ? 'Salvar alterações' : 'Cadastrar veículo'}</button>
           </form>
-          {#if message}<p class="mt-4 rounded-xl bg-neutral-100 p-3 text-sm dark:bg-white/5">{message}</p>{/if}
+          {#if saveError}<p class="mt-4 rounded-xl bg-red-100 p-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-200">{saveError}</p>{/if}
+          {#if message}<p class="mt-4 rounded-xl bg-emerald-100 p-3 text-sm text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">{message}</p>{/if}
         </section>
 
         <div class="space-y-8">
+          <section class="grid gap-3 sm:grid-cols-3">
+            <div class="rounded-2xl bg-white p-5 shadow-xl dark:bg-neutral-900"><p class="text-xs uppercase tracking-wider text-neutral-500">Veículos</p><p class="mt-1 text-3xl font-black">{cars.length}</p></div>
+            <div class="rounded-2xl bg-white p-5 shadow-xl dark:bg-neutral-900"><p class="text-xs uppercase tracking-wider text-neutral-500">Disponíveis</p><p class="mt-1 text-3xl font-black">{cars.filter((car) => car.available).length}</p></div>
+            <div class="rounded-2xl bg-white p-5 shadow-xl dark:bg-neutral-900"><p class="text-xs uppercase tracking-wider text-neutral-500">Interesses</p><p class="mt-1 text-3xl font-black">{inquiries.filter((item) => item.status === 'new').length}</p></div>
+          </section>
           <section class="rounded-3xl bg-white p-6 shadow-xl dark:bg-neutral-900">
             <div class="flex items-center justify-between"><h2 class="text-2xl font-black">Veículos</h2><span class="text-sm text-neutral-500">{cars.length} cadastrados</span></div>
             <div class="mt-5 space-y-3">
